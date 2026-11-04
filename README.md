@@ -71,27 +71,48 @@ Click either image to open its corresponding MP4 recording in GitHub.
 ## System Architecture
 
 ```mermaid
-flowchart LR
-    A["<b>GAZEBO / IGNITION</b><br/>5-Drone Simulation"]
-    B["<b>ROS 2 HUMBLE</b><br/>DDS Communication"]
-    C["<b>LEADER — DRONE 0</b><br/>Task Allocation<br/>Progress Monitoring<br/>Task Reallocation"]
-    D["<b>FOLLOWER DRONES</b><br/>Drone 1 — Area A<br/>Drone 2 — Area B<br/>Drone 3 — Area C<br/>Drone 4 — Helper"]
+flowchart TB
 
-    A <--> B
-    B <--> C
-    C -->|Task Assignment| D
-    D -.->|Status Feedback| C
+    SIM["Gazebo / Ignition<br/>5-Drone Simulation"]
+    ROS["ROS 2 Humble + DDS"]
 
-    classDef sim fill:#263747,stroke:#64B5F6,color:#FFFFFF,stroke-width:2px
-    classDef comm fill:#263D52,stroke:#4FC3F7,color:#FFFFFF,stroke-width:2px
+    LEAD["drone0 — Leader<br/>Mission Coordinator"]
+
+    TASK["Task Allocation<br/>Progress Monitoring<br/>Dynamic Reallocation"]
+
+    F1["drone1 — Follower<br/>Survey Area A"]
+    F2["drone2 — Follower<br/>Survey Area B"]
+    F3["drone3 — Follower<br/>Survey Area C"]
+    F4["drone4 — Helper<br/>Reassigned Tasks"]
+
+    SIM <--> ROS
+    ROS <--> LEAD
+
+    LEAD --> TASK
+
+    TASK --> F1
+    TASK --> F2
+    TASK --> F3
+    TASK --> F4
+
+    F1 -.-> LEAD
+    F2 -.-> LEAD
+    F3 -.-> LEAD
+    F4 -.-> LEAD
+
+    classDef simulation fill:#263747,stroke:#64B5F6,color:#FFFFFF,stroke-width:2px
+    classDef middleware fill:#263D52,stroke:#4FC3F7,color:#FFFFFF,stroke-width:2px
     classDef leader fill:#493B27,stroke:#FFCA65,color:#FFFFFF,stroke-width:2px
-    classDef drones fill:#203F36,stroke:#81C784,color:#FFFFFF,stroke-width:2px
+    classDef task fill:#3D344E,stroke:#B39DDB,color:#FFFFFF,stroke-width:2px
+    classDef follower fill:#203F36,stroke:#81C784,color:#FFFFFF,stroke-width:2px
 
-    class A sim
-    class B comm
-    class C leader
-    class D drones
+    class SIM simulation
+    class ROS middleware
+    class LEAD leader
+    class TASK task
+    class F1,F2,F3,F4 follower
 ```
+
 
 
 
