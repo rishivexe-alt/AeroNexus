@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚁 Five-Drone Leader–Follower Formation & Dynamic Area Survey
+#  Five-Drone Leader–Follower Formation & Dynamic Area Survey
 
 ### Distributed multi-UAV coordination with formation control and automatic task reallocation, built on ROS 2, AeroStack2 and Gazebo
 
@@ -18,28 +18,28 @@
 
 ---
 
-## 📌 Overview
+##  Overview
 
 This project delivers a **five-drone leader–follower coordination system** developed and demonstrated entirely in simulation. It goes beyond formation flight: the leader also **assigns independent survey areas to individual followers, monitors their progress, and automatically reassigns unfinished work** to a spare drone when a follower reports a delay.
 
 **drone0** is the leader; **drone1 – drone4** are followers. Every leader–follower interaction is a ROS 2 topic over DDS, so each drone runs as an independent process and can be inspected on its own.
 
-### ✨ Key Features
+###  Key Features
 
 | | Feature |
 |---|---|
-| 🧭 | **Line and V/arrow formations** defined as fixed offsets from the leader |
-| 🎛️ | **Clipped proportional controller** with separate climb/descent limits for bounded, traceable motion |
-| 🔀 | **Four control paths**: AeroStack2 high-level API, centralised direct control, distributed DDS, and task-based allocation |
-| 📡 | **Fully distributed execution**: one process per follower, communicating only through ROS 2 topics |
-| 🗺️ | **Per-drone survey tasks** (areas A, B, C) sent on private task topics as JSON |
-| 🔄 | **Delay-triggered reallocation**: unfinished waypoints move from a delayed drone to an idle helper |
-| 🛩️ | **Altitude separation**: each drone flies at its own flight level during surveys |
-| 🔍 | **Documented diagnostics**: layered troubleshooting from model spawn to controller response |
+| 1 | **Line and V/arrow formations** defined as fixed offsets from the leader |
+| 2 | **Clipped proportional controller** with separate climb/descent limits for bounded, traceable motion |
+| 3 | **Four control paths**: AeroStack2 high-level API, centralised direct control, distributed DDS, and task-based allocation |
+| 4 | **Fully distributed execution**: one process per follower, communicating only through ROS 2 topics |
+| 5 | **Per-drone survey tasks** (areas A, B, C) sent on private task topics as JSON |
+| 6 | **Delay-triggered reallocation**: unfinished waypoints move from a delayed drone to an idle helper |
+| 7 | **Altitude separation**: each drone flies at its own flight level during surveys |
+| 8 | **Documented diagnostics**: layered troubleshooting from model spawn to controller response |
 
 ---
 
-## 🎬 Demo Videos
+##  Demo Videos
 
 Click a thumbnail to open the recording.
 
@@ -51,7 +51,7 @@ Click a thumbnail to open the recording.
 
 ---
 
-## 🖼️ Simulation Gallery
+##  Simulation Gallery
 
 All frames are captured from the Gazebo simulation with drone0 to drone4 spawned in the world.
 
@@ -69,7 +69,7 @@ All frames are captured from the Gazebo simulation with drone0 to drone4 spawned
 
 ---
 
-## 🏗️ System Architecture
+##  System Architecture
 
 The system is split into layers so that a fault can be traced to one layer instead of being guessed at.
 
@@ -116,7 +116,7 @@ flowchart LR
 
 ---
 
-## 🧭 Formation Control
+##  Formation Control
 
 Formation is a **fixed (x, y) offset from the leader**, held at a common altitude. Each follower converges on `leader position + offset`.
 
@@ -149,7 +149,7 @@ Velocity clipping matters as much as the gain: it keeps the response bounded and
 
 ---
 
-## 🗺️ Dynamic Area Survey and Task Reallocation
+##  Dynamic Area Survey and Task Reallocation
 
 ### Survey areas
 
@@ -205,7 +205,7 @@ The design separates **deciding** who does the work (the leader) from **doing** 
 
 ---
 
-## 🧩 Program Variants
+##  Program Variants
 
 | File | Approach | Demonstrates |
 |---|---|---|
@@ -218,7 +218,7 @@ The design separates **deciding** who does the work (the leader) from **doing** 
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -308,7 +308,7 @@ Land all drones first, then:
 
 ---
 
-## ✅ Verified Results
+##  Verified Results
 
 Recorded maximum position errors from the simulation runs:
 
@@ -332,7 +332,7 @@ Recorded maximum position errors from the simulation runs:
 
 ---
 
-## 🔧 Engineering Diagnosis Highlights
+##  Engineering Diagnosis Highlights
 
 Every integration issue was diagnosed layer by layer instead of changing several things at once.
 
@@ -360,15 +360,8 @@ Follower logs are written to `/tmp/follower1.log` … `/tmp/follower4.log`.
 
 ---
 
-## ⚠️ Limitations
 
-- Simulation only; not validated on hardware.
-- Control uses **ground-truth pose**, not onboard state estimation.
-- No collision avoidance beyond altitude separation during surveys.
-- The delay is **injected** (`delay_at`) to demonstrate the recovery path.
-- The leader's formation reference is held in the command demo; only the DDS and task variants track the leader's live pose.
-
-## 🔭 Future Work
+##  Future Work
 
 - Replace ground-truth pose with onboard estimation and add sensor noise
 - Add inter-drone collision avoidance and obstacle handling
@@ -378,7 +371,7 @@ Follower logs are written to `/tmp/follower1.log` … `/tmp/follower4.log`.
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```text
 five-drone-swarm/
@@ -403,27 +396,12 @@ five-drone-swarm/
     └── videos/        # Demo screencasts
 ```
 
-## 📚 Documentation
+##  Documentation
 
 - [Technical Report (PDF)](docs/Technical_Report.pdf): summary, design, results and full source listings
 - [Technical Documentation (Markdown)](docs/Technical_Documentation.md): detailed design, operations, diagnostics and handover checklist
 
-## 👤 Author
+##  Author
 
-**Your Name**: [GitHub](https://github.com/your-username) · [LinkedIn](https://www.linkedin.com/in/your-profile)
-
-## 📄 License
-
-Released under the MIT License. See [`LICENSE`](LICENSE).
-
-## 🙏 Acknowledgements
-
-[ROS 2](https://docs.ros.org/en/humble/) · [AeroStack2](https://github.com/aerostack2/aerostack2) · [Gazebo](https://gazebosim.org/) · [eProsima Fast DDS](https://fast-dds.docs.eprosima.com/)
-
+**Rishi P**
 ---
-
-<div align="center">
-
-⭐ If you found this project useful, please consider giving it a star.
-
-</div>
