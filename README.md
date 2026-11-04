@@ -2,20 +2,6 @@
 
 #  Five-Drone Leader–Follower Formation & Dynamic Area Survey
 
-### Distributed multi-UAV coordination with formation control and automatic task reallocation, built on ROS 2, AeroStack2 and Gazebo
-
-![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E?logo=ros&logoColor=white)
-![AeroStack2](https://img.shields.io/badge/AeroStack2-Framework-0A66C2)
-![Gazebo](https://img.shields.io/badge/Gazebo-Ignition%20Fortress-F58113)
-![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
-![DDS](https://img.shields.io/badge/Middleware-Fast%20DDS-6A1B9A)
-![Status](https://img.shields.io/badge/Status-Verified%20in%20Simulation-2EA44F)
-
-[Demo Videos](#-demo-videos) · [Gallery](#-simulation-gallery) · [Architecture](#-system-architecture) · [Quick Start](#-quick-start) · [Results](#-verified-results) · [Documentation](#-documentation)
-
-</div>
-
 ---
 
 ##  Overview
