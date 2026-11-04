@@ -68,31 +68,103 @@ Click either image to open its corresponding MP4 recording in GitHub.
 
 *Images and recordings are supplied project artifacts captured from the Gazebo simulation.*
 
-## System architecture
+
+## System Architecture
+
+The system follows a layered multi-agent architecture integrating Gazebo/Ignition simulation, ROS 2 Humble communication, centralized mission coordination, and five autonomous drone agents.
 
 ```mermaid
 flowchart TB
-    SIM["Gazebo / Ignition simulation"]
-    ROS["ROS 2 Humble + DDS"]
-    LEAD["drone0 — Leader"]
-    F1["drone1 — Follower / Area A"]
-    F2["drone2 — Follower / Area B"]
-    F3["drone3 — Follower / Area C"]
-    F4["drone4 — Follower / Reassignment helper"]
-    TASK["Task allocation and progress supervision"]
 
-    SIM <--> ROS
-    ROS <--> LEAD
-    ROS <--> F1
-    ROS <--> F2
-    ROS <--> F3
-    ROS <--> F4
-    LEAD --> TASK
-    TASK --> F1
-    TASK --> F2
-    TASK --> F3
-    TASK --> F4
+    %% SIMULATION LAYER
+    subgraph SIM["1. SIMULATION ENVIRONMENT"]
+        direction LR
+        GZ["Gazebo / Ignition<br/>5-Drone Simulation"]
+        WORLD["World and Drone Models<br/>Physics • Sensors • Ground Truth"]
+        GZ --- WORLD
+    end
+
+    %% COMMUNICATION LAYER
+    subgraph COMM["2. COMMUNICATION MIDDLEWARE"]
+        direction LR
+        ROS["ROS 2 Humble"]
+        DDS["DDS Communication<br/>Topics • Messages • Status"]
+        ROS --- DDS
+    end
+
+    %% COORDINATION LAYER
+    subgraph CTRL["3. MISSION COORDINATION LAYER"]
+        direction TB
+
+        LEADER["DRONE 0 — LEADER<br/>Mission Coordinator"]
+
+        subgraph MISSION["Mission Management"]
+            direction LR
+            ALLOC["Task Allocation<br/>Area Assignment"]
+            MON["Progress Monitoring<br/>Status Tracking"]
+            REALLOC["Dynamic Task Reallocation<br/>Remaining Waypoints"]
+        end
+
+        LEADER --> ALLOC
+        ALLOC --> MON
+        MON --> REALLOC
+        REALLOC --> ALLOC
+    end
+
+    %% AGENT LAYER
+    subgraph AGENTS["4. DRONE AGENT LAYER"]
+        direction LR
+
+        D1["DRONE 1<br/>Follower<br/>Survey Area A"]
+        D2["DRONE 2<br/>Follower<br/>Survey Area B"]
+        D3["DRONE 3<br/>Follower<br/>Survey Area C"]
+        D4["DRONE 4<br/>Helper Agent<br/>Reassigned Tasks"]
+    end
+
+    %% EXECUTION AND FEEDBACK
+    subgraph EXEC["5. EXECUTION AND FEEDBACK"]
+        direction LR
+        NAV["Drone Navigation<br/>Waypoint Execution"]
+        FEEDBACK["Position • Mission Status<br/>Completion / Delay Reports"]
+    end
+
+    %% INTER-LAYER CONNECTIONS
+    SIM <--> COMM
+    COMM <--> CTRL
+    COMM <--> AGENTS
+
+    %% TASK DISTRIBUTION
+    ALLOC --> D1
+    ALLOC --> D2
+    ALLOC --> D3
+    REALLOC --> D4
+
+    %% EXECUTION
+    D1 --> NAV
+    D2 --> NAV
+    D3 --> NAV
+    D4 --> NAV
+
+    %% FEEDBACK LOOP
+    NAV --> FEEDBACK
+    FEEDBACK --> MON
+
+    %% STYLING
+    classDef simulation fill:#263747,stroke:#64B5F6,color:#FFFFFF,stroke-width:2px
+    classDef middleware fill:#263D52,stroke:#4FC3F7,color:#FFFFFF,stroke-width:2px
+    classDef coordination fill:#493B27,stroke:#FFCA65,color:#FFFFFF,stroke-width:2px
+    classDef mission fill:#3D344E,stroke:#B39DDB,color:#FFFFFF,stroke-width:1.5px
+    classDef agents fill:#203F36,stroke:#81C784,color:#FFFFFF,stroke-width:2px
+    classDef execution fill:#44343A,stroke:#EF9A9A,color:#FFFFFF,stroke-width:2px
+
+    class GZ,WORLD simulation
+    class ROS,DDS middleware
+    class LEADER coordination
+    class ALLOC,MON,REALLOC mission
+    class D1,D2,D3,D4 agents
+    class NAV,FEEDBACK execution
 ```
+
 
 ### Main ROS 2 interfaces
 
