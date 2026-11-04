@@ -328,8 +328,6 @@ Recorded maximum position errors from the simulation runs:
 | Survey allocation (A/B/C) | Implemented and demonstrated |
 | Delay handling | A3/A4 transferred to drone4 and completed |
 
-> **Scope note.** These figures are simulation maxima from recorded runs. They are not hardware flight accuracy or a statistical performance guarantee. The reallocation demonstrates a programmed recovery path and does not establish a general reliability percentage or reassignment latency.
-
 ---
 
 ##  Engineering Diagnosis Highlights
