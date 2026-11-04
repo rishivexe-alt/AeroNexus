@@ -7,10 +7,6 @@
 A five-UAV simulation project demonstrating formation control, distributed coordination,
 multi-area waypoint assignment, progress reporting, and delay-triggered task reassignment.
 
-[Demonstration videos](#-simulation-demonstrations) ·
-[Architecture](#-system-architecture) ·
-[Quick start](#-quick-start) ·
-[Documentation](#-documentation)
 
 </div>
 
