@@ -2,7 +2,8 @@
 
 #  Five-Drone Leader–Follower Formation & Dynamic Area Survey
 
-### Multi-UAV coordination with formation control and automatic task reallocation, built on ROS 2, AeroStack2 and Gazebo
+### Multi-UAV coordination with formation control and automatic task reallocation, 
+built on ROS 2, AeroStack2 and Gazebo
 
 
 </div>
