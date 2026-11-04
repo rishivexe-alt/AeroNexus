@@ -1,7 +1,6 @@
 <div align="center">
 
-# Five-Drone Leader–Follower Formation
-## Dynamic Multi-Drone Area Survey with Task Reallocation
+# Five Drone Leader Follower Formation and Dynamic Multi-Drone Area Survey with Task Reallocation
 
 **ROS 2 Humble · AeroStack2 · Gazebo / Ignition · Python · DDS**
 
