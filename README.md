@@ -12,9 +12,9 @@
 ![DDS](https://img.shields.io/badge/Middleware-Fast%20DDS-6A1B9A)
 ![Status](https://img.shields.io/badge/Status-Verified%20in%20Simulation-2EA44F)
 
-[Demo Videos](#-demo-videos) · [Gallery](#-simulation-gallery) · [Architecture](#-system-architecture) · [Quick Start](#-quick-start) · [Results](#-verified-results) · [Documentation](#-documentation)
 
 </div>
+
 ---
 
 ##  Overview
