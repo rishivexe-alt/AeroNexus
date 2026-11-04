@@ -68,25 +68,29 @@ Click either image to open its corresponding MP4 recording in GitHub.
 
 *Images and recordings are supplied project artifacts captured from the Gazebo simulation.*
 
-
 ## System Architecture
 
 ```mermaid
-flowchart TD
-    A["Gazebo / Ignition<br/>5-Drone Simulation"]
-    B["ROS 2 Humble + DDS"]
-    C["Leader — Drone 0<br/>Task Allocation & Reallocation"]
-    D["Follower Drones<br/>D1: Area A | D2: Area B<br/>D3: Area C | D4: Helper"]
+flowchart LR
+    A["<b>GAZEBO / IGNITION</b><br/>5-Drone Simulation"]
+    B["<b>ROS 2 HUMBLE</b><br/>DDS Communication"]
+    C["<b>LEADER — DRONE 0</b><br/>Task Allocation<br/>Progress Monitoring<br/>Task Reallocation"]
+    D["<b>FOLLOWER DRONES</b><br/>Drone 1 — Area A<br/>Drone 2 — Area B<br/>Drone 3 — Area C<br/>Drone 4 — Helper"]
 
     A <--> B
     B <--> C
-    C <--> D
-    D -. "Mission Status & Feedback" .-> C
+    C -->|Task Assignment| D
+    D -.->|Status Feedback| C
 
-    style A fill:#263747,stroke:#64B5F6,color:#fff
-    style B fill:#263D52,stroke:#4FC3F7,color:#fff
-    style C fill:#493B27,stroke:#FFCA65,color:#fff
-    style D fill:#203F36,stroke:#81C784,color:#fff
+    classDef sim fill:#263747,stroke:#64B5F6,color:#FFFFFF,stroke-width:2px
+    classDef comm fill:#263D52,stroke:#4FC3F7,color:#FFFFFF,stroke-width:2px
+    classDef leader fill:#493B27,stroke:#FFCA65,color:#FFFFFF,stroke-width:2px
+    classDef drones fill:#203F36,stroke:#81C784,color:#FFFFFF,stroke-width:2px
+
+    class A sim
+    class B comm
+    class C leader
+    class D drones
 ```
 
 
