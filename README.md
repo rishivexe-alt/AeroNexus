@@ -399,7 +399,12 @@ five-drone-swarm/
 - [Technical Report (PDF)](docs/Technical_Report.pdf): summary, design, results and full source listings
 - [Technical Documentation (Markdown)](docs/Technical_Documentation.md): detailed design, operations, diagnostics and handover checklist
 
-##  Author
+## License
 
-**Rishi P**
+MIT — see [LICENSE](LICENSE).
+
+## Author
+
+**Rishi P.**  
+Electronics & Communication Engineering  
 ---
