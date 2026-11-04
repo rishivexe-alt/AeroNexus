@@ -47,7 +47,7 @@ Click a thumbnail to open the recording.
 |:---:|:---:|
 | [![Formation demo](assets/images/gazebo_v_formation.jpeg)](assets/videos/demo_formation.mp4) | [![Survey demo](assets/images/gazebo_survey_altitude_separation.jpeg)](assets/videos/demo_survey_reallocation.mp4) |
 | Takeoff → Line → V/Arrow → Line → Land | Areas A/B/C assigned, delay injected, A3/A4 transferred to drone4 |
-| [▶ `demo_formation.mp4`](assets/videos/demo_formation.mp4) | [▶ `demo_survey_reallocation.mp4`](assets/videos/demo_survey_reallocation.mp4) |
+| [`demo_formation.mp4`](assets/videos/demo_formation.mp4) | [`demo_survey_reallocation.mp4`](assets/videos/demo_survey_reallocation.mp4) |
 
 ---
 
