@@ -136,19 +136,11 @@ Formation geometry is a set of fixed horizontal offsets from the leader (flight 
 | 3 | (−4.5, 0) | (−3.0, +3.0) |
 | 4 | (−6.0, 0) | (−3.0, −3.0) |
 
-```text
- LINE                                        V / ARROW
-                                                          D3
- D4 ·· D3 ·· D2 ·· D1 ·· D0 ──►                    D1
-                                                  D0 ──►
-                                                    D2
-                                                          D4
-```
-
 **Control law** (applied per axis to the error between target and current position):
 
 ```text
-v_x = clip(Kp · e_x, 0.6 m/s)          v_y = clip(Kp · e_y, 0.6 m/s)
+v_x = clip(Kp · e_x, 0.6 m/s)
+v_y = clip(Kp · e_y, 0.6 m/s)
 v_z = clip(2 · Kp · e_z, +0.5 / −0.4 m/s)
 ```
 
