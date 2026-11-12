@@ -361,7 +361,7 @@ python3 direct_formation.py
 
 # D. Survey allocation + reassignment
 ./run_leader_tasks.sh
-#    then:  T  ->  mission delay  ->  status  ->  L
+# T  ->  mission delay  ->  status  ->  L
 
 # E. Dynamic leader election
 ./run_dynamic_swarm.sh battery        # battery | id | centroid
