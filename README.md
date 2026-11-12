@@ -350,7 +350,6 @@ These are separate programs. **Run only one at a time** against the same drones.
 | Gazebo / Ignition Fortress | Compatible with your AeroStack2 install |
 | `tmux`, `tmuxinator` | Used by the multi-drone launcher |
 
-> **Important:** `launch_as2_5drone.bash` is an integration launcher, not a standalone installer. It expects the surrounding AeroStack2 project workspace to provide `utils/get_drones.py`, `utils/stop_tmux_sessions.bash` and `tmuxinator/aerostack2.yaml`. Copy this repository's files into that workspace (the docs assume `~/project_gazebo`), keeping `config/world_swarm_5drone.yaml` and `config/fastdds_udp_only.xml` in place.
 
 ### 1. Clone and set up the environment
 
@@ -365,7 +364,6 @@ export FASTDDS_DEFAULT_PROFILES_FILE="$PWD/config/fastdds_udp_only.xml"
 export ROS2CLI_DISABLE_DAEMON=1
 ```
 
-> The run scripts (`run_*.sh`) assume the project lives in `~/project_gazebo`. Edit the `cd` line in each script if your path differs.
 
 ### 2. Launch the simulation
 
@@ -423,7 +421,6 @@ swarm > L                 # land
 swarm > q
 ```
 
-> `fail`/`recover` are verified by the offline test suite. A live Gazebo failover recording is not included.
 
 ### 5. Run the election tests (no ROS needed)
 
@@ -438,9 +435,9 @@ python3 test_election.py
 ```bash
 cat /tmp/follower1.log                       # per-follower logs (variants C, D)
 cat /tmp/swarm0.log                          # per-drone logs (variant E)
-tail -n0 -F /tmp/swarm*.log | grep --line-buffered -E "LEADER|MANUAL|AUTO|FAILURE|recovered"
+tail -n0 -F /tmp/swarm*.log | grep --line-buffered -E 
 
-# Land the drones first, then:
+# Land the drones, then:
 pkill -f dynamic_swarm.py; pkill -f swarm_cli.py
 ./stop.bash                                   # review it first: it terminates Gazebo processes
 ```
