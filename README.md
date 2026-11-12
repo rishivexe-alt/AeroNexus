@@ -42,7 +42,6 @@ The project is built in layers, so each layer can be developed, run and diagnose
 - **Altitude-separated flight levels** to keep drones from sharing a flight level.
 - **Dynamic leader election** (term-based, Raft-inspired, with no voting rounds) using 10 Hz heartbeats, with three selection criteria: `battery`, `id` and `centroid`.
 - **Manual leader pinning** with `leader N`, while failure failover stays active.
-- **Unit-tested election logic** under 20% simulated packet loss, runnable on any machine without ROS.
 
 ---
 
