@@ -15,30 +15,6 @@
 
 ---
 
-## Table of contents
-
-- [Overview](#overview)
-- [Key features](#key-features)
-- [Demonstrations](#demonstrations)
-- [System architecture](#system-architecture)
-- [How it works](#how-it-works)
-  - [1. Formation control](#1-formation-control)
-  - [2. Survey task allocation and reassignment](#2-survey-task-allocation-and-reassignment)
-  - [3. Dynamic leader election](#3-dynamic-leader-election)
-- [Control variants at a glance](#control-variants-at-a-glance)
-- [Repository layout](#repository-layout)
-- [Getting started](#getting-started)
-- [Operator command reference](#operator-command-reference)
-- [ROS 2 interfaces](#ros-2-interfaces)
-- [Verification and results](#verification-and-results)
-- [Engineering challenges solved](#engineering-challenges-solved)
-- [Scope, limitations and honest boundaries](#scope-limitations-and-honest-boundaries)
-- [Roadmap](#roadmap)
-- [Documentation](#documentation)
-- [Author](#author)
-- [License](#license)
-
----
 
 ## Overview
 
