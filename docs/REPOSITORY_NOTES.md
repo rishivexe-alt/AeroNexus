@@ -2,42 +2,42 @@
 
 ## Included project material
 
-This repository combines the original project documentation and Gazebo media
-with the separately supplied Python, Bash, XML and YAML files.
+This repository combines the original project documentation and Gazebo media with the Python, Bash, XML and YAML files used in the five-drone project.
+
+| Group | Files |
+|---|---|
+| Fixed-leader system | `leader_follower_command_demo.py`, `direct_formation.py`, `leader_follower_dds.py`, `leader_tasks.py`, `run_leader_follower.sh`, `run_leader_tasks.sh` |
+| Dynamic leader election | `election.py`, `dynamic_swarm.py`, `swarm_cli.py`, `test_election.py`, `run_dynamic_swarm.sh` |
+| Simulation | `launch_as2_5drone.bash`, `stop.bash`, `config/world_swarm_5drone.yaml`, `config/fastdds_udp_only.xml` |
+| Documentation | `docs/Technical_Documentation.md`, `docs/Technical_Report.pdf`, `docs/Dynamic_Swarm_Technical_Documentation.pdf` |
 
 ## Important external workspace dependencies
 
-`launch_as2_5drone.bash` is an integration launcher, not a standalone installer.
-It expects the surrounding AeroStack2 project workspace to provide resources
-such as:
+`launch_as2_5drone.bash` is an integration launcher, not a standalone installer. It expects the surrounding AeroStack2 project workspace to provide:
 
 - `utils/get_drones.py`
 - `utils/stop_tmux_sessions.bash`
-- `utils/tmuxinator_to_genome.py` when using GNOME mode
+- `utils/tmuxinator_to_genome.py` (GNOME mode only)
 - `tmuxinator/aerostack2.yaml`
-- Any additional launch/configuration resources required by the installed
-  AeroStack2 project.
+- any additional launch resources required by the installed AeroStack2 project
 
-The five-drone repository supplies `config/world_swarm_5drone.yaml` and
-`config/fastdds_udp_only.xml`; it does not bundle the entire AeroStack2 project.
+The launcher references `config/world.yaml` for its non-swarm mode. That file is not included because this repository packages the five-drone configuration only.
 
 ## Control variants
 
-Run one control variant at a time against the simulated fleet. The programs
-publish to overlapping vehicle command interfaces and are not designed to be
-run concurrently against the same drones.
+Run one control variant at a time against the simulated fleet. The programs publish to overlapping vehicle command interfaces and are not designed to run concurrently against the same drones.
 
-## Validation performed during packaging
+## Validation
 
-- Python syntax compilation (`py_compile`) for the four Python programs.
-- Bash syntax validation (`bash -n`) for the four Bash scripts.
-- XML parsing for the Fast DDS profile.
-- YAML parsing where a YAML parser is available.
+Automated in CI (`.github/workflows/ci.yml`):
 
-These are static checks only. A full runtime test requires the target Ubuntu,
-ROS 2 Humble, AeroStack2 and Gazebo environment.
+- Python syntax compilation for all programs
+- Bash syntax validation for all scripts
+- XML and YAML parsing of the configuration files
+- Offline election test suite (`python3 test_election.py`)
+
+These checks do not replace a full runtime test, which requires Ubuntu 22.04, ROS 2 Humble, AeroStack2 and Gazebo.
 
 ## Shutdown caution
 
-Review `stop.bash` before execution. It invokes a helper from the surrounding
-workspace and terminates Gazebo-related processes. Land simulated drones first.
+Review `stop.bash` before execution. It invokes a helper from the surrounding workspace and terminates Gazebo-related processes. Land simulated drones first.

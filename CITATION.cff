@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "AeroNexus: Five-Drone Leader-Follower Formation, Dynamic Area Survey with Task Reallocation, and Dynamic Leader Election"
+type: software
+authors:
+  - name: "Rishi P."
+repository-code: "https://github.com/rishivexe-alt/AeroNexus"
+license: MIT
+keywords:
+  - ROS 2
+  - AeroStack2
+  - Gazebo
+  - multi-UAV
+  - swarm
+  - formation control
+  - leader election

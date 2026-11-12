@@ -1,170 +1,316 @@
 <div align="center">
 
-# Five Drone Leader Follower Formation and Dynamic Multi-Drone Area Survey with Task Reallocation
+# AeroNexus
 
-**ROS 2 Humble · AeroStack2 · Gazebo / Ignition · Python · DDS**
+### Five-Drone Leader–Follower Formation, Dynamic Area Survey with Task Reallocation, and Self-Organising Leader Election
 
-A five-UAV simulation project demonstrating formation control, distributed coordination,
-multi-area waypoint assignment, progress reporting, and delay-triggered task reassignment.
+**ROS 2 Humble · AeroStack2 · Gazebo / Ignition Fortress · Python · Fast DDS**
 
+![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E?logo=ros&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)
+![Simulator](https://img.shields.io/badge/Simulator-Gazebo%20Fortress-F58113)
+![Framework](https://img.shields.io/badge/Framework-AeroStack2-0A7BBB)
+![Platform](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
+[![CI](https://github.com/rishivexe-alt/AeroNexus/actions/workflows/ci.yml/badge.svg)](https://github.com/rishivexe-alt/AeroNexus/actions/workflows/ci.yml)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Scope](https://img.shields.io/badge/Scope-Simulation-informational)
+
+<img src="assets/images/banner.jpg" alt="AeroNexus: line formation, V formation and altitude-separated survey in Gazebo" width="100%">
+
+*Five simulated quadrotors flying line and V formations, surveying separate areas at separate altitudes, and re-electing their own leader.*
 
 </div>
 
 ---
 
-## Project overview
+## Table of contents
 
-This project develops and documents a five-drone coordination system in simulation.
-The fleet consists of one leader (`drone0`) and four followers (`drone1`–`drone4`).
-The project explores several control and coordination approaches, from direct
-pose-feedback control to ROS 2 topic-based leader–follower execution and
-leader-managed survey tasks.
+- [Overview](#overview)
+- [Key features](#key-features)
+- [Demonstrations](#demonstrations)
+- [System architecture](#system-architecture)
+- [How it works](#how-it-works)
+  - [1. Formation control](#1-formation-control)
+  - [2. Survey task allocation and reassignment](#2-survey-task-allocation-and-reassignment)
+  - [3. Dynamic leader election](#3-dynamic-leader-election)
+- [Control variants at a glance](#control-variants-at-a-glance)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+- [Operator command reference](#operator-command-reference)
+- [ROS 2 interfaces](#ros-2-interfaces)
+- [Verification and results](#verification-and-results)
+- [Engineering challenges solved](#engineering-challenges-solved)
+- [Scope, limitations and honest boundaries](#scope-limitations-and-honest-boundaries)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Author](#author)
+- [License](#license)
 
-The task-allocation implementation assigns three survey areas to three followers.
-A programmed delay event can cause the leader to transfer the unfinished waypoints
-to an available helper drone. This is a simulated delay/reassignment scenario;
-it is not an autonomous real-world fault-detection or safety-certified system.
+---
 
-> **Scope:** Simulation and software demonstration only. No physical-drone flight
-> validation or safety certification is claimed.
+## Overview
 
-## Highlights
+AeroNexus is a multi-UAV coordination project built entirely in simulation. A fleet of five quadrotors (`drone0`–`drone4`) is coordinated over **ROS 2 topics and DDS**, with every drone running as an independent process.
 
-- Five simulated quadrotors with consistent `drone0`–`drone4` namespaces.
-- Line and V/arrow formation layouts.
-- A high-level AeroStack2 `DroneInterface` implementation.
-- A direct pose-feedback / velocity-command implementation.
-- A distributed ROS 2 leader–follower implementation using DDS topics.
-- Leader-assigned survey tasks over areas A, B and C.
-- Follower progress events and delay-triggered transfer of remaining waypoints.
-- Gazebo screenshots, two demonstration recordings, technical documentation and report.
+The project is built in layers, so each layer can be developed, run and diagnosed on its own:
 
-## Simulation demonstrations
+| Stage | What it adds |
+|---|---|
+| **Vehicle control** | A high-level AeroStack2 path and a low-level velocity-feedback path |
+| **Formation flight** | Line and V/arrow formations with a leader that followers track live |
+| **Mission layer** | The leader assigns survey areas, followers report progress, and unfinished waypoints are moved to a helper drone |
+| **Resilience layer** | No fixed leader: all five drones run the same program and elect a leader from heartbeats, with failover, battery-based handover and manual override |
 
-Click either image to open its corresponding MP4 recording in GitHub.
+> **Scope:** simulation and software demonstration only. No physical-drone flight validation or safety certification is claimed. See [Scope, limitations and honest boundaries](#scope-limitations-and-honest-boundaries).
+
+---
+
+## Key features
+
+- **Five-drone swarm** with consistent `drone0`–`drone4` namespaces and one log per process.
+- **Line and V/arrow formations** defined as fixed offsets from the leader.
+- **Two vehicle-control paths:** the AeroStack2 `DroneInterface` (arm, offboard, takeoff, GoTo, land) and a direct pose-feedback controller publishing Gazebo velocity commands.
+- **Distributed leader–follower execution** over DDS: followers track the leader's live pose at 20 Hz.
+- **Individual survey tasks** sent as JSON over per-drone topics, with progress reporting (`WP_DONE`, `DELAYED`, `TASK_DONE`).
+- **Delay-triggered task reallocation:** unfinished waypoints are transferred to a spare drone while the delayed drone holds.
+- **Altitude-separated flight levels** to keep drones from sharing a flight level.
+- **Dynamic leader election** (term-based, Raft-inspired, with no voting rounds) using 10 Hz heartbeats, with three selection criteria: `battery`, `id` and `centroid`.
+- **Manual leader pinning** with `leader N`, while failure failover stays active.
+- **Unit-tested election logic** under 20% simulated packet loss, runnable on any machine without ROS.
+
+---
+
+## Demonstrations
+
+Click a thumbnail to open the recording.
 
 | Leader–follower formation | Survey and task reallocation |
 |:--:|:--:|
-| [![Formation demonstration](assets/images/gazebo_v_formation.jpeg)](assets/videos/demo_formation.mp4) | [![Survey/reallocation demonstration](assets/images/gazebo_survey_altitude_separation.jpeg)](assets/videos/demo_survey_reallocation.mp4) |
-| Takeoff, line and V/arrow formation, landing | Area assignment, injected delay and reassignment demonstration |
+| [![Formation demo](assets/images/gazebo_v_formation.jpeg)](assets/videos/demo_formation.mp4) | [![Survey demo](assets/images/gazebo_survey_altitude_separation.jpeg)](assets/videos/demo_survey_reallocation.mp4) |
+| Takeoff, line, V/arrow, landing | Area assignment, injected delay and reassignment |
 
-## Gazebo simulation gallery
+### Simulation gallery
 
-| Line formation — front | Line formation — rear |
+| Line formation, front | Line formation, rear |
 |:--:|:--:|
-| ![Line formation front](assets/images/gazebo_line_formation_front.jpeg) | ![Line formation rear](assets/images/gazebo_line_formation_rear.jpeg) |
+| ![Line front](assets/images/gazebo_line_formation_front.jpeg) | ![Line rear](assets/images/gazebo_line_formation_rear.jpeg) |
 
-| V/arrow formation | Survey altitude separation |
+| V / arrow formation | Column formation |
 |:--:|:--:|
-| ![V formation](assets/images/gazebo_v_formation.jpeg) | ![Survey altitude separation](assets/images/gazebo_survey_altitude_separation.jpeg) |
+| ![V formation](assets/images/gazebo_v_formation.jpeg) | ![Column formation](assets/images/gazebo_column_formation.jpeg) |
 
-| Column formation |
+| Survey with altitude separation |
 |:--:|
-| ![Column formation](assets/images/gazebo_column_formation.jpeg) |
+| ![Survey altitude separation](assets/images/gazebo_survey_altitude_separation.jpeg) |
 
-*Images and recordings are supplied project artifacts captured from the Gazebo simulation.*
+### Dynamic leader election
 
-## System Architecture
+| Five drones spawned | Dynamic line behind the elected leader | Dynamic V behind the elected leader |
+|:--:|:--:|:--:|
+| ![Spawned](assets/images/gazebo_dynamic_five_drones_spawned.jpg) | ![Dynamic line](assets/images/gazebo_dynamic_line_formation.jpg) | ![Dynamic V](assets/images/gazebo_dynamic_v_formation.jpg) |
+
+*All images and recordings are captured from the Gazebo simulation.*
+
+---
+
+## System architecture
 
 ```mermaid
 flowchart TB
+    SIM["Gazebo / Ignition<br/>five-drone simulation"]
+    DDS["ROS 2 Humble + Fast DDS<br/>(UDP-only profile)"]
 
-    SIM["Gazebo / Ignition<br/>5-Drone Simulation"]
-    ROS["ROS 2 Humble + DDS"]
+    subgraph V1["Fixed-leader system"]
+        L0["drone0: Leader<br/>commands, leader pose,<br/>task supervision"]
+        F1["drone1: Follower<br/>survey area A"]
+        F2["drone2: Follower<br/>survey area B"]
+        F3["drone3: Follower<br/>survey area C"]
+        F4["drone4: Follower<br/>helper for reassigned work"]
+    end
 
-    LEAD["drone0 — Leader<br/>Mission Coordinator"]
+    subgraph V2["Dynamic swarm (election)"]
+        N["drone0 ... drone4<br/>identical dynamic_swarm.py<br/>heartbeat + election"]
+        CLI["swarm_cli.py<br/>operator console"]
+    end
 
-    TASK["Task Allocation<br/>Progress Monitoring<br/>Dynamic Reallocation"]
-
-    F1["drone1 — Follower<br/>Survey Area A"]
-    F2["drone2 — Follower<br/>Survey Area B"]
-    F3["drone3 — Follower<br/>Survey Area C"]
-    F4["drone4 — Helper<br/>Reassigned Tasks"]
-
-    SIM <--> ROS
-    ROS <--> LEAD
-
-    LEAD --> TASK
-
-    TASK --> F1
-    TASK --> F2
-    TASK --> F3
-    TASK --> F4
-
-    F1 -.-> LEAD
-    F2 -.-> LEAD
-    F3 -.-> LEAD
-    F4 -.-> LEAD
-
-    classDef simulation fill:#263747,stroke:#64B5F6,color:#FFFFFF,stroke-width:2px
-    classDef middleware fill:#263D52,stroke:#4FC3F7,color:#FFFFFF,stroke-width:2px
-    classDef leader fill:#493B27,stroke:#FFCA65,color:#FFFFFF,stroke-width:2px
-    classDef task fill:#3D344E,stroke:#B39DDB,color:#FFFFFF,stroke-width:2px
-    classDef follower fill:#203F36,stroke:#81C784,color:#FFFFFF,stroke-width:2px
-
-    class SIM simulation
-    class ROS middleware
-    class LEAD leader
-    class TASK task
-    class F1,F2,F3,F4 follower
+    SIM <--> DDS
+    DDS <--> L0
+    L0 -- "task / command" --> F1 & F2 & F3 & F4
+    F1 & F2 & F3 & F4 -. "status" .-> L0
+    DDS <--> N
+    CLI -- "/swarm/cmd" --> N
+    N -- "/swarm/heartbeat" --> N
 ```
 
+The layers and what implements them:
 
-
-
-### Main ROS 2 interfaces
-
-| Topic | Message type | Role |
+| Layer | Responsibility | Implementation |
 |---|---|---|
-| `/formation/command` | `std_msgs/String` | Formation command broadcast in the DDS formation variant |
-| `/formation/leader_pose` | `geometry_msgs/PoseStamped` | Leader position reference |
-| `/formation/task/droneN` | `std_msgs/String` containing JSON | Individual follower task |
-| `/formation/status` | `std_msgs/String` containing JSON | Follower progress/status event |
-| `/droneN/ground_truth/pose` | `geometry_msgs/PoseStamped` | Simulation pose feedback |
-| `/gz/droneN/cmd_vel` | `geometry_msgs/Twist` | Gazebo velocity-command interface used by direct-control variants |
+| Simulation | Vehicle models, physics, simulator topics | Gazebo / Ignition |
+| Vehicle abstraction | Arm, offboard, takeoff, GoTo, land | AeroStack2 `DroneInterface` |
+| Motion control | Pose feedback, target calculation, velocity generation | `direct_formation.py` and the DDS programs |
+| Coordination | Leader commands and leader-pose distribution | `leader_follower_dds.py` |
+| Task execution and supervision | Survey tasks, status, reassignment | `leader_tasks.py` |
+| Role management | Election, manual override, failover | `election.py`, `dynamic_swarm.py`, `swarm_cli.py` |
 
-The topic names above describe the interfaces used by the submitted programs.
-The exact availability of topics depends on the running simulation, bridges and
-AeroStack2/Gazebo configuration.
+**Design principle:** the leader never calls follower code directly or shares memory with it. Every interaction is a ROS 2 topic, so any drone can be inspected, restarted or replaced on its own.
 
-## Control and coordination variants
+---
 
-These are separate implementations and should be launched independently.
-Do not run multiple controllers against the same drones at the same time.
+## How it works
 
-| Program | Approach | Main demonstration |
-|---|---|---|
-| `leader_follower_command_demo.py` | AeroStack2 `DroneInterface` | High-level takeoff, line/V formation and landing commands |
-| `direct_formation.py` | Centralised pose feedback and velocity commands | Direct five-drone formation control |
-| `leader_follower_dds.py` | Separate leader/follower ROS 2 processes | Distributed formation commands over DDS |
-| `leader_tasks.py` | Individual task topics and shared status topic | Survey assignment, progress reporting and reassignment |
+### 1. Formation control
 
-### Formation geometry
+Formation geometry is a set of fixed horizontal offsets from the leader (flight direction is +x). Each follower computes `target = leader position + offset` and converges on it with a clipped proportional controller.
 
-The DDS/task implementations use fixed follower offsets relative to the leader.
+| Slot | Line offset (x, y) m | V / arrow offset (x, y) m |
+|:--:|:--:|:--:|
+| Leader | (0, 0) | (0, 0) |
+| 1 | (−1.5, 0) | (−1.5, +1.5) |
+| 2 | (−3.0, 0) | (−1.5, −1.5) |
+| 3 | (−4.5, 0) | (−3.0, +3.0) |
+| 4 | (−6.0, 0) | (−3.0, −3.0) |
 
-| Drone | Line offset (m) | V/arrow offset (m) |
-|---|---:|---:|
-| `drone0` (leader) | `(0, 0)` | `(0, 0)` |
-| `drone1` | `(-1.5, 0)` | `(-1.5, +1.5)` |
-| `drone2` | `(-3.0, 0)` | `(-1.5, -1.5)` |
-| `drone3` | `(-4.5, 0)` | `(-3.0, +3.0)` |
-| `drone4` | `(-6.0, 0)` | `(-3.0, -3.0)` |
+```text
+ LINE                                        V / ARROW
+                                                          D3
+ D4 ·· D3 ·· D2 ·· D1 ·· D0 ──►                    D1
+                                                  D0 ──►
+                                                    D2
+                                                          D4
+```
 
-### Survey allocation
+**Control law** (applied per axis to the error between target and current position):
 
-| Drone | Initial responsibility |
+```text
+v_x = clip(Kp · e_x, 0.6 m/s)          v_y = clip(Kp · e_y, 0.6 m/s)
+v_z = clip(2 · Kp · e_z, +0.5 / −0.4 m/s)
+```
+
+| Parameter | Value |
 |---|---|
-| `drone1` | Area A |
-| `drone2` | Area B |
-| `drone3` | Area C |
-| `drone4` | Available helper |
-| `drone0` | Mission coordination |
+| Target altitude / ground reference | 1.05 m / 0.06 m |
+| Proportional gain `Kp` | 0.8 |
+| Horizontal velocity limit | 0.6 m/s |
+| Climb / descent limit | 0.5 m/s / 0.4 m/s |
+| Position tolerance | 0.15 m (0.2 m in the task program) |
 
-Each survey area is represented by four waypoints in `leader_tasks.py`.
-The delay scenario is triggered by the task program and reports the remaining
-waypoints to the leader. The leader selects an idle helper and sends it the
-unfinished work.
+The vertical term uses twice the gain so altitude converges faster than horizontal position. Descent is limited to a lower speed than climb for a gentler landing.
+
+### 2. Survey task allocation and reassignment
+
+The leader (`leader_tasks.py`) gives each follower its own survey area as a JSON task on `/formation/task/droneN`. Followers run a small state machine and report on `/formation/status`.
+
+| Area | Initial owner | Waypoints (x, y) m |
+|:--:|:--:|---|
+| A | drone1 | (−2.5, −2.0) → (−2.5, 2.0) → (−1.0, 2.0) → (−1.0, −2.0) |
+| B | drone2 | (−0.5, −2.0) → (−0.5, 2.0) → (0.5, 2.0) → (0.5, −2.0) |
+| C | drone3 | (1.0, −2.0) → (1.0, 2.0) → (2.5, 2.0) → (2.5, −2.0) |
+| Helper | drone4 | Available for reassigned work |
+
+Each drone flies its own altitude (drone1 1.05 m, drone2 1.35 m, drone3 1.65 m, drone4 1.95 m), so no two vehicles share a flight level.
+
+**Task types:** `TAKEOFF`, `LAND`, `HOLD`, `FORMATION`, `GOTO`, `SURVEY`.
+**Status events:** `WP_DONE`, `DELAYED`, `TASK_DONE`, `GOTO_DONE`.
+
+```json
+{ "type": "SURVEY", "area": "A",
+  "wps": [[-2.5,-2.0,1.05], [-2.5,2.0,1.05], [-1.0,2.0,1.05], [-1.0,-2.0,1.05]],
+  "todo": [0, 1, 2, 3] }
+```
+
+**Delay-triggered reassignment** (`mission delay`):
+
+```mermaid
+sequenceDiagram
+    participant L as Leader (drone0)
+    participant D1 as drone1 (area A)
+    participant D4 as drone4 (helper)
+
+    L->>D1: SURVEY area A, todo [1,2,3,4]
+    D1-->>L: WP_DONE A1
+    D1-->>L: WP_DONE A2
+    D1-->>L: DELAYED, remaining [3,4]
+    Note over L: pick idle helper, update busy set
+    L->>D4: SURVEY area A, todo [3,4]
+    L->>D1: HOLD
+    D4-->>L: WP_DONE A3
+    D4-->>L: WP_DONE A4
+    D4-->>L: TASK_DONE
+    Note over L: all 12 waypoints done, MISSION VERIFIED
+```
+
+Recorded leader output from the demonstration:
+
+```text
+[LEADER] drone1 finished A1
+[LEADER] drone1 finished A2
+[LEADER] drone1 reports DELAY, remaining A waypoints [3, 4]
+[LEADER] TRANSFER: drone1 -> drone4, area A
+[LEADER] -> drone4: SURVEY area A waypoints [3, 4]
+[LEADER] -> drone1: HOLD
+[LEADER] drone4 finished A3
+[LEADER] drone4 finished A4
+[LEADER] drone4 finished its task
+```
+
+> The delay is injected by the mission code (`delay_at`). It exercises the reallocation pathway; it is **not** a sensor-based failure detector.
+
+### 3. Dynamic leader election
+
+In the dynamic variant there is **no hard-coded leader**. All five drones run the same `dynamic_swarm.py`, and roles are decided at run time by `election.py` from heartbeats on `/swarm/heartbeat`.
+
+**Protocol (term-based, Raft-inspired, no voting rounds):**
+
+| Rule | Behaviour |
+|---|---|
+| Heartbeat | 10 Hz; carries ID, battery, position, mode, current claim (term + leader) and pin state |
+| Alive | A drone is alive if a heartbeat was heard within 1.5 s |
+| Claim ordering | Higher term wins; for equal terms the lower leader ID wins. Everyone adopts the highest claim from a live peer, so views converge even with packet loss |
+| Initial election | After 3 s with no claim, each drone independently claims term 1 for the best-ranked alive drone |
+| Leader failure | If the leader goes silent, followers claim `term + 1` for the best alive drone |
+| Planned handover | Only the current leader may start one, and only if a challenger beats it by a margin. This prevents threshold races and flapping |
+| Rejoin | A restarted drone adopts the swarm's current claim and becomes leader only through a planned handover |
+
+```mermaid
+flowchart TD
+    A["Election tick"] --> B{"Higher claim heard<br/>from a live peer<br/>naming a live leader?"}
+    B -- yes --> C["Adopt claim"]
+    B -- no --> D{"No leader yet and<br/>3 s elapsed?"}
+    D -- yes --> E["Claim term 1 for<br/>best alive drone"]
+    D -- no --> F{"Current leader<br/>still alive?"}
+    F -- no --> G["Claim term+1 for<br/>best alive drone"]
+    F -- yes --> H{"I am leader, not pinned,<br/>and a challenger beats me<br/>by the margin?"}
+    H -- yes --> I["Claim term+1 for challenger<br/>(planned handover)"]
+    H -- no --> J["No change"]
+```
+
+**Selection criteria** (chosen at launch):
+
+| Criterion | Selection rule | Planned handover trigger |
+|---|---|---|
+| `battery` (default) | Highest battery; ties go to the lowest ID | Challenger leads by ≥ 5 percentage points |
+| `id` | Lowest alive ID | Never pre-empts a live leader |
+| `centroid` | Drone closest to the swarm centroid | Challenger is ≥ 1 m closer |
+| manual | Operator choice via `leader N` | Pinned; failure failover stays active; a dead target is refused |
+
+**Dynamic formation:** followers sorted by ID fill slots 1–4 behind whichever drone currently leads, and the slots compress if a drone drops out. Each drone flies at `1.05 m + 0.3 m × ID`, so the formation is also vertically stacked. The simulated battery drains at 0.3 %/s, or 0.6 %/s for the leader, which makes leadership rotate under the `battery` criterion.
+
+---
+
+## Control variants at a glance
+
+These are separate programs. **Run only one at a time** against the same drones.
+
+| Program | Approach | Use it to demonstrate |
+|---|---|---|
+| `leader_follower_command_demo.py` | AeroStack2 `DroneInterface` | High-level takeoff, line/V and landing commands (the leader is held at a nominal reference point, and takeoff runs one drone at a time) |
+| `direct_formation.py` | One node, ground-truth pose + Gazebo velocity | Direct formation control from the leader's starting position |
+| `leader_follower_dds.py` | Separate leader and follower processes | Live leader tracking over DDS |
+| `leader_tasks.py` | Per-drone task topics + shared status topic | Survey assignment, progress reporting and reassignment |
+| `dynamic_swarm.py` | Identical nodes + heartbeat election | Leader election, failover, manual override, dynamic formation |
+
+---
 
 ## Repository layout
 
@@ -172,218 +318,316 @@ unfinished work.
 .
 ├── README.md
 ├── LICENSE
-├── .gitignore
+├── CITATION.cff
+├── leader_follower_command_demo.py   # AeroStack2 high-level demo
+├── direct_formation.py               # direct pose-feedback controller
+├── leader_follower_dds.py            # distributed leader/follower formation
+├── leader_tasks.py                   # survey tasks and reassignment
+├── election.py                       # election logic (pure Python, no ROS)
+├── dynamic_swarm.py                  # per-drone node with election
+├── swarm_cli.py                      # operator console
+├── test_election.py                  # offline election tests
+├── launch_as2_5drone.bash            # simulation launcher
+├── run_leader_follower.sh            # starts the DDS formation processes
+├── run_leader_tasks.sh               # starts the task-allocation processes
+├── run_dynamic_swarm.sh              # starts the five election nodes + console
+├── stop.bash                         # session and simulator shutdown
 ├── config/
-│   ├── fastdds_udp_only.xml
-│   └── world_swarm_5drone.yaml
-├── leader_follower_command_demo.py
-├── direct_formation.py
-├── leader_follower_dds.py
-├── leader_tasks.py
-├── launch_as2_5drone.bash
-├── run_leader_follower.sh
-├── run_leader_tasks.sh
-├── stop.bash
+│   ├── world_swarm_5drone.yaml       # five-drone world
+│   └── fastdds_udp_only.xml          # UDP-only Fast DDS profile
 ├── docs/
 │   ├── Technical_Documentation.md
-│   └── Technical_Report.pdf
-└── assets/
-    ├── images/
-    └── videos/
+│   ├── Technical_Report.pdf
+│   ├── Dynamic_Swarm_Technical_Documentation.pdf
+│   └── REPOSITORY_NOTES.md
+├── assets/
+│   ├── images/                       # Gazebo screenshots
+│   └── videos/                       # demonstration recordings
+└── .github/workflows/ci.yml          # syntax checks + election tests
 ```
 
-The launcher also expects supporting AeroStack2 project resources such as
-`utils/get_drones.py`, `utils/stop_tmux_sessions.bash` and
-`tmuxinator/aerostack2.yaml`. These are not duplicated in this repository.
-They must be available in the surrounding AeroStack2 project workspace.
+---
 
-## Requirements and environment
+## Getting started
 
-The supplied documentation describes the development environment as:
+### Prerequisites
 
-- Ubuntu 22.04
-- ROS 2 Humble
-- AeroStack2 workspace
-- Gazebo / Ignition Gazebo version compatible with the installed AeroStack2 setup
-- Python 3 and `rclpy`
-- ROS message packages: `geometry_msgs`, `std_msgs`
-- `tmux` and `tmuxinator` for the multi-agent launcher
-- Fast DDS configuration support
+| Requirement | Notes |
+|---|---|
+| Ubuntu 22.04 | Development and runtime OS |
+| ROS 2 Humble | `geometry_msgs`, `std_msgs`, `rclpy` |
+| AeroStack2 workspace | Built and sourceable (default `~/aerostack2_ws`) |
+| Gazebo / Ignition Fortress | Compatible with your AeroStack2 install |
+| `tmux`, `tmuxinator` | Used by the multi-drone launcher |
 
-The repository does not install ROS 2 or AeroStack2 automatically. Install and
-build those dependencies using their official project instructions first.
+> **Important:** `launch_as2_5drone.bash` is an integration launcher, not a standalone installer. It expects the surrounding AeroStack2 project workspace to provide `utils/get_drones.py`, `utils/stop_tmux_sessions.bash` and `tmuxinator/aerostack2.yaml`. Copy this repository's files into that workspace (the docs assume `~/project_gazebo`), keeping `config/world_swarm_5drone.yaml` and `config/fastdds_udp_only.xml` in place.
 
-## Quick start
-
-### 1. Clone the repository
+### 1. Clone and set up the environment
 
 ```bash
-git clone https://github.com/rishivexe-alt/Five-Drone-Leader-Follower-Formation-and-Dynamic-Multi-Drone-Area-Survey-with-Task-Reallocation.git
-cd Five-Drone-Leader-Follower-Formation-and-Dynamic-Multi-Drone-Area-Survey-with-Task-Reallocation
-```
+git clone https://github.com/rishivexe-alt/AeroNexus.git
+cd AeroNexus
 
-### 2. Source ROS 2 and AeroStack2
-
-Adjust the AeroStack2 workspace path if yours differs.
-
-```bash
 source /opt/ros/humble/setup.bash
 source ~/aerostack2_ws/install/setup.bash
-```
-
-### 3. Prepare the project workspace
-
-The launcher expects to run from the root of the AeroStack2 Gazebo project workspace,
-which must contain the supporting `utils/` and `tmuxinator/` resources described above.
-Place or integrate the files from this repository into that workspace, preserving:
-
-```text
-config/world_swarm_5drone.yaml
-config/fastdds_udp_only.xml
-```
-
-Set the Fast DDS profile in each terminal that runs the project:
-
-```bash
 export FASTRTPS_DEFAULT_PROFILES_FILE="$PWD/config/fastdds_udp_only.xml"
 export FASTDDS_DEFAULT_PROFILES_FILE="$PWD/config/fastdds_udp_only.xml"
+export ROS2CLI_DISABLE_DAEMON=1
 ```
 
-### 4. Launch the five-drone simulation
+> The run scripts (`run_*.sh`) assume the project lives in `~/project_gazebo`. Edit the `cd` line in each script if your path differs.
 
-From the AeroStack2 project workspace root, where `utils/` and `tmuxinator/` are available:
+### 2. Launch the simulation
 
 ```bash
 chmod +x launch_as2_5drone.bash
-./launch_as2_5drone.bash -m
+./launch_as2_5drone.bash -m          # -m = five-drone multi-agent world
 ```
 
-The `-m` option selects the five-drone world configuration. The launch script uses
-the project’s tmuxinator configuration to start the drone sessions.
-
-### 5. Run one control variant
-
-Start only one controller variant at a time, after confirming that all required
-drone models and topics are available.
-
-**A. AeroStack2 command demo**
+Check that everything came up before starting a controller:
 
 ```bash
+tmux list-sessions                                   # drone0 ... drone4
+ros2 topic list | grep -E "ground_truth|cmd_vel"
+ros2 topic echo /drone0/ground_truth/pose --once
+```
+
+### 3. Run one control variant
+
+```bash
+# A. AeroStack2 command demo        (TAKEOFF, LINE, V_FORMATION, LAND, EXIT)
 python3 leader_follower_command_demo.py
-```
 
-Commands: `TAKEOFF`, `LINE`, `V_FORMATION`, `LAND`, `EXIT`.
-
-**B. Direct formation controller**
-
-```bash
+# B. Direct formation controller    (TAKEOFF, LINE, V_FORMATION, LAND, EXIT)
 python3 direct_formation.py
-```
 
-Commands: `TAKEOFF`, `LINE`, `V_FORMATION`, `LAND`, `EXIT`.
-
-**C. DDS leader–follower formation**
-
-```bash
-chmod +x run_leader_follower.sh
+# C. DDS leader-follower formation  (T, 1, 2, L, g dx dy, q)
 ./run_leader_follower.sh
+
+# D. Survey allocation + reassignment
+./run_leader_tasks.sh
+#    then:  T  ->  mission delay  ->  status  ->  L
+
+# E. Dynamic leader election
+./run_dynamic_swarm.sh battery        # battery | id | centroid
 ```
 
-Leader commands: `1` (LINE), `2` (ARROW), `T` (TAKEOFF), `L` (LAND),
-`g dx dy` (move leader), `q` (quit).
+### 4. Dynamic swarm walkthrough
 
-**D. Survey task allocation and reassignment**
+```text
+swarm > batt 0 100        # set simulated batteries
+swarm > batt 1 95
+swarm > batt 2 90
+swarm > batt 3 85
+swarm > batt 4 80
+swarm > status            # who leads, term, consensus
+swarm > T                 # take off
+swarm > 1                 # line formation behind the leader
+swarm > 2                 # V / arrow formation
+swarm > batt 0 60         # leader weakens -> planned handover
+swarm > leader 3          # manual leader (pins selection)
+swarm > fail 3            # simulate drone3 going silent -> failover
+swarm > recover 3         # drone3 rejoins and adopts the current claim
+swarm > auto              # back to criterion-based selection
+swarm > L                 # land
+swarm > q
+```
+
+> `fail`/`recover` are verified by the offline test suite. A live Gazebo failover recording is not included.
+
+### 5. Run the election tests (no ROS needed)
+
+The election logic is pure Python, so the test suite runs on any machine:
 
 ```bash
-chmod +x run_leader_tasks.sh
-./run_leader_tasks.sh
+python3 test_election.py
 ```
 
-The leader command interface includes `T`, `L`, `1`, `2`, `mission`,
-`mission delay`, `status`, `assign`, `g dx dy` and `q`.
-The delay scenario is a programmed demonstration event.
+### 6. Diagnostics and shutdown
 
-### 6. Shutdown
+```bash
+cat /tmp/follower1.log                       # per-follower logs (variants C, D)
+cat /tmp/swarm0.log                          # per-drone logs (variant E)
+tail -n0 -F /tmp/swarm*.log | grep --line-buffered -E "LEADER|MANUAL|AUTO|FAILURE|recovered"
 
-Land the simulated vehicles using the active controller before stopping the
-simulation. The supplied `stop.bash` script also relies on the surrounding
-AeroStack2 workspace utilities. Review the script before running it because
-it terminates simulation-related processes.
+# Land the drones first, then:
+pkill -f dynamic_swarm.py; pkill -f swarm_cli.py
+./stop.bash                                   # review it first: it terminates Gazebo processes
+```
 
-## Configuration notes
+Troubleshooting:
 
-- `config/world_swarm_5drone.yaml` defines the `empty` world and five
-  `quadrotor_base` vehicles with GPS payloads.
-- `config/fastdds_udp_only.xml` defines a UDPv4 transport profile.
-- The launch script references `config/world.yaml` for its non-swarm mode.
-  That file is not included because this repository packages the five-drone
-  configuration only.
+| Symptom | Check |
+|---|---|
+| No drone namespaces | World YAML, `utils/get_drones.py`, tmuxinator config, sourced environment |
+| Drone exists but does not move | Pose topic, `/gz/droneN/cmd_vel`, Gazebo bridge, velocity-controller enable topic |
+| Nodes cannot talk to each other | All terminals use the same ROS/AeroStack2 environment and the same Fast DDS profile |
+| Follower ignores a task | Follower process, `/formation/task/droneN`, `/formation/leader_pose`, `/formation/status` |
+| Timings feel slow | Check the Gazebo real-time factor; wall-clock seconds are not simulation seconds |
 
-## Validation status and limitations
+---
 
-The uploaded Python files were checked for Python syntax, and the uploaded Bash
-scripts were checked with `bash -n`. These checks do not prove runtime operation.
+## Operator command reference
 
-The screenshots, videos, technical report and technical documentation are
-included as project evidence. Performance values and simulation outcomes should
-be interpreted in the context and conditions documented in those materials.
+**Task-allocation leader** (`./run_leader_tasks.sh`)
 
-Known boundaries:
+| Command | Effect |
+|---|---|
+| `T` / `L` | Take off / land all followers |
+| `1` / `2` | LINE / ARROW formation |
+| `mission` / `mission delay` | Assign areas A, B, C; the `delay` variant triggers the reassignment demo |
+| `assign N HOLD\|LAND\|LINE\|ARROW\|GOTO x y z` | Send a task to drone N |
+| `g dx dy` | Move the leader reference |
+| `status` | Area progress and busy drones |
+| `q` | Quit |
 
-- The delay/reallocation scenario is programmed; automatic detection of real
-  vehicle failures is future work.
-- The submitted controllers use simulation pose feedback and/or the interfaces
-  documented in the technical report.
-- Collision avoidance, obstacle avoidance, robust fault detection and real
-  aircraft validation are not claimed as completed capabilities.
-- The launcher depends on surrounding AeroStack2 project utilities not included
-  in this repository.
+**Dynamic swarm console** (`./run_dynamic_swarm.sh`)
 
-## Troubleshooting
+| Command | Effect |
+|---|---|
+| `T` / `L` | Take off / land all drones |
+| `1` / `2` | LINE / ARROW formation behind the current leader |
+| `g dx dy` | Move the current leader; followers follow |
+| `leader N` | Make drone N leader and pin the selection |
+| `auto` | Resume criterion-based selection |
+| `fail N` / `recover N` | Simulate drone N going silent / rejoining |
+| `batt N PERCENT` | Set drone N's simulated battery |
+| `status` | Leader, battery, mode, term, consensus, selection mode |
+| `q` | Quit |
 
-**No drone namespaces appear**
+---
 
-Check the world YAML, `utils/get_drones.py`, tmuxinator configuration and the
-AeroStack2 workspace environment.
+## ROS 2 interfaces
 
-**A drone exists but does not move**
+| Topic | Message type | Purpose |
+|---|---|---|
+| `/formation/command` | `std_msgs/String` | Formation and flight commands (DDS formation variant) |
+| `/formation/leader_pose` | `geometry_msgs/PoseStamped` | Leader pose reference (20 Hz) |
+| `/formation/task/droneN` | `std_msgs/String` (JSON) | Individual follower task |
+| `/formation/status` | `std_msgs/String` (JSON) | Follower progress and task status |
+| `/swarm/heartbeat` | `std_msgs/String` (JSON) | Dynamic-swarm heartbeat and leader claim (10 Hz) |
+| `/swarm/cmd` | `std_msgs/String` | Operator commands |
+| `/droneN/ground_truth/pose` | `geometry_msgs/PoseStamped` | Ground-truth position feedback |
+| `/gz/droneN/cmd_vel` | `geometry_msgs/Twist` | Gazebo velocity command |
 
-Check its pose topic, command topic, Gazebo bridge and controller/plugin state
-before changing controller gains.
+Topic availability depends on the running simulation, bridges and AeroStack2/Gazebo configuration.
 
-**ROS 2 nodes cannot communicate**
+---
 
-Confirm that all terminals source the same ROS 2 and AeroStack2 environments
-and use the intended Fast DDS profile.
+## Verification and results
 
-**A follower does not respond to a task**
+### Recorded simulation results
 
-Check the follower process, its namespace, `/formation/task/droneN`, the
-leader-pose topic where relevant, and `/formation/status`.
+Maximum position errors recorded during the formation demonstrations:
+
+| Operation | Max position error |
+|---|:--:|
+| Takeoff | 0.03 m |
+| Line formation | 0.04 m |
+| V formation | 0.02 m |
+| Landing | 0.05 m |
+
+These are recorded maxima from simulation runs. They are **not** hardware accuracy or a statistical performance guarantee. The reallocation demonstration shows the programmed recovery path; it does not establish a reliability percentage or a reassignment latency.
+
+### Functional verification
+
+| Area | Outcome |
+|---|---|
+| Five-drone initialisation | Demonstrated |
+| Takeoff / landing | Demonstrated within the formation sequence |
+| Line and V/arrow formation | Demonstrated |
+| DDS command path (`T, 1, 2, 1, L`) | Demonstrated |
+| Survey allocation (A, B, C) | Demonstrated |
+| Delay handling (A3 and A4 completed by drone4) | Recorded output confirms |
+| Dynamic line and V formation behind an elected leader | Demonstrated (screenshots above) |
+
+### Election test suite (`test_election.py`)
+
+Five virtual drones, simulated 10 Hz heartbeats, **20% random packet loss**, fake clock, fixed random seed.
+
+| Test | Result |
+|---|---|
+| Initial election | drone0 (highest battery) elected, all agree |
+| Leader failure | drone1 elected by all, recovery in 1.6 s |
+| Cascading failure (drone0, then drone1) | drone2 elected |
+| Weaker drone rejoins | Adopts the incumbent; no forced re-election |
+| Much stronger drone rejoins | Regains leadership through a planned handover |
+| Battery handover over 300 s | 10 planned handovers, minimum dwell 17 s (no flapping), all agree |
+| Equal batteries | Tie-break to lowest ID, zero flapping |
+| `id` and `centroid` criteria | Correct leader selected |
+| Slot assignment with dead or changed leader | Correct |
+| Manual pin | Holds for 200 s; failover still works; dead target refused |
+
+Run `python3 test_election.py` to reproduce. The tests exercise the election logic offline; a live Gazebo failover recording is not part of the evidence.
+
+---
+
+## Engineering challenges solved
+
+| Problem | Diagnosis and resolution |
+|---|---|
+| **Plugin identifier mismatch** | The simulator did not load the multicopter controller. The SDF identifier was checked against the installed version; the Fortress-valid `ignition-gazebo-multicopter-control-system` loads, the `gz-sim-` form does not exist there. |
+| **Spawn timeouts** | Spawning was isolated from control by inserting models manually with `ros_gz_sim create`, confirming model files and the spawn path independently of the launcher. |
+| **Invalid SDF** | Each generated model was parsed with Python's XML parser and searched for the plugin declaration. |
+| **Drone present but not moving** | Command delivery was checked in stages: publisher, bridge, controller-enable topic, then pose response, using a minimal vertical test command followed by zero velocity. |
+| **Low real-time factor** | Wall-clock durations do not equal simulation durations when Gazebo runs below real time. Timing and timeouts were interpreted with the real-time factor in mind. |
+| **Hard-to-localise multi-process faults** | Each follower runs as its own process with its own `/tmp/followerN.log`, backed by per-drone tmux sessions and per-drone pose checks. |
+| **Task-state coordination** | The leader tracks busy drones and completed waypoint indices, so a transfer sends only the *remaining* work. |
+| **Competing controllers** | Control variants publish to overlapping interfaces, so the workflow starts the simulation first and runs exactly one variant at a time. |
+
+---
+
+## Scope, limitations and honest boundaries
+
+- **Simulation only.** No physical flight validation, hardware-in-the-loop or safety certification.
+- **The survey delay is programmed.** It is injected through `delay_at`; automatic failure detection in the survey system is future work.
+- **Election and survey are separate layers.** The dynamic swarm does not yet carry the survey task state, so a mid-mission leader change would not transfer the mission.
+- **Ground-truth pose** is used for feedback; this is not onboard state estimation.
+- **No collision avoidance or obstacle-aware planning.** Altitude layers are the separation mechanism in the survey and dynamic variants.
+- **Simulated battery** in the dynamic swarm; the real battery topic is not connected.
+- **Helper selection is simple:** the leader picks the highest-ID idle drone.
+- **No message validation:** malformed JSON on a task or status topic is not handled gracefully.
+- **Network partitions** are not tested in the election suite.
+- **The launcher depends on external AeroStack2 project files** that are not bundled here.
+- Python syntax and shell checks plus the offline election tests are automated; full runtime testing needs the Ubuntu 22.04 + ROS 2 Humble + AeroStack2 + Gazebo environment.
+
+---
+
+## Roadmap
+
+- [ ] Merge the survey/reassignment layer into the dynamic swarm so a newly elected leader inherits mission state
+- [ ] Replace the programmed delay with heartbeat- and progress-timeout failure detection
+- [ ] Improve helper selection (proximity, battery, current load)
+- [ ] Add leader-velocity feed-forward to reduce follower lag at full leader speed
+- [ ] Add collision avoidance and obstacle-aware planning
+- [ ] Replace ground-truth pose with onboard state estimation
+- [ ] Record a live Gazebo failover run and measure failover and reassignment latency
+- [ ] Add input validation and automated end-to-end simulation tests
+- [ ] Explore hardware-in-the-loop and real-flight validation
+
+---
 
 ## Documentation
 
-- [Technical Documentation](docs/Technical_Documentation.md) — setup, architecture,
-  communication, program operation, diagnostics and handover notes.
-- [Technical Report (PDF)](docs/Technical_Report.pdf) — detailed project report
-  and source listings.
+| Document | Contents |
+|---|---|
+| [`docs/Technical_Documentation.md`](docs/Technical_Documentation.md) | Setup, architecture, communication, program operation, diagnostics and handover notes |
+| [`docs/Technical_Report.pdf`](docs/Technical_Report.pdf) | Detailed project report with recorded results and source listings |
+| [`docs/Dynamic_Swarm_Technical_Documentation.pdf`](docs/Dynamic_Swarm_Technical_Documentation.pdf) | Complete documentation including the dynamic leader-election extension and all source code |
+| [`docs/REPOSITORY_NOTES.md`](docs/REPOSITORY_NOTES.md) | Integration notes and external dependencies |
 
-## Future work
-
-- Add heartbeat/progress-timeout based delay and failure detection.
-- Improve task reassignment policy and helper selection.
-- Add collision avoidance and obstacle-aware planning.
-- Replace ground-truth feedback with onboard state estimation.
-- Add repeatable automated test scenarios and measured reassignment latency.
-- Explore hardware-in-the-loop and real-flight validation.
+---
 
 ## Author
 
-**Rishi P.**  
-Electronics & Communication Engineering  
-GitHub: [@rishivexe-alt](https://github.com/rishivexe-alt)  
-LinkedIn: [rishi-p2105](https://www.linkedin.com/in/rishi-p2105/)
+**Rishi P.**
+Electronics & Communication Engineering
+GitHub: [@rishivexe-alt](https://github.com/rishivexe-alt) · LinkedIn: [rishi-p2105](https://www.linkedin.com/in/rishi-p2105/)
 
 ## License
 
-This project is distributed under the MIT License. See [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE).
+
+## Acknowledgements
+
+Built on [ROS 2 Humble](https://docs.ros.org/en/humble/), [AeroStack2](https://aerostack2.github.io/) and [Gazebo](https://gazebosim.org/).
