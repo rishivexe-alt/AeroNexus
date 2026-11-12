@@ -47,8 +47,6 @@ The project is built in layers, so each layer can be developed, run and diagnose
 
 ## Demonstrations
 
-Click a thumbnail to open the recording.
-
 | Leader–follower formation | Survey and task reallocation |
 |:--:|:--:|
 | [![Formation demo](assets/images/gazebo_v_formation.jpeg)](assets/videos/demo_formation.mp4) | [![Survey demo](assets/images/gazebo_survey_altitude_separation.jpeg)](assets/videos/demo_survey_reallocation.mp4) |
