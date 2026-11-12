@@ -6,14 +6,6 @@
 
 **ROS 2 Humble · AeroStack2 · Gazebo / Ignition Fortress · Python · Fast DDS**
 
-![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E?logo=ros&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)
-![Simulator](https://img.shields.io/badge/Simulator-Gazebo%20Fortress-F58113)
-![Framework](https://img.shields.io/badge/Framework-AeroStack2-0A7BBB)
-![Platform](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
-[![CI](https://github.com/rishivexe-alt/AeroNexus/actions/workflows/ci.yml/badge.svg)](https://github.com/rishivexe-alt/AeroNexus/actions/workflows/ci.yml)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Scope](https://img.shields.io/badge/Scope-Simulation-informational)
 
 <img src="assets/images/banner.jpg" alt="AeroNexus: line formation, V formation and altitude-separated survey in Gazebo" width="100%">
 
@@ -60,8 +52,6 @@ The project is built in layers, so each layer can be developed, run and diagnose
 | **Formation flight** | Line and V/arrow formations with a leader that followers track live |
 | **Mission layer** | The leader assigns survey areas, followers report progress, and unfinished waypoints are moved to a helper drone |
 | **Resilience layer** | No fixed leader: all five drones run the same program and elect a leader from heartbeats, with failover, battery-based handover and manual override |
-
-> **Scope:** simulation and software demonstration only. No physical-drone flight validation or safety certification is claimed. See [Scope, limitations and honest boundaries](#scope-limitations-and-honest-boundaries).
 
 ---
 
